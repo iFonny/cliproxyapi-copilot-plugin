@@ -158,7 +158,7 @@ func (s *Service) models(ctx context.Context, callbackID, authID string, storage
 	return cleaned, token, nil
 }
 
-func (s *Service) endpointForModel(ctx context.Context, callbackID, authID string, storage authStorage, modelID string) (string, copilotTokenEntry, error) {
+func (s *Service) endpointForModel(ctx context.Context, callbackID, authID string, storage authStorage, modelID, sourceFormat string) (string, copilotTokenEntry, error) {
 	modelID = strings.TrimSpace(modelID)
 	if modelID == "" {
 		return "", copilotTokenEntry{}, statusError("invalid_request", "model is required", http.StatusBadRequest)
@@ -173,7 +173,7 @@ func (s *Service) endpointForModel(ctx context.Context, callbackID, authID strin
 	}
 	for _, model := range models {
 		if strings.EqualFold(model.ID, modelID) {
-			endpoint, errEndpoint := selectEndpoint(model)
+			endpoint, errEndpoint := selectEndpoint(model, sourceFormat)
 			return endpoint, token, errEndpoint
 		}
 	}
@@ -183,12 +183,12 @@ func (s *Service) endpointForModel(ctx context.Context, callbackID, authID strin
 	return "", token, statusError("model_not_found", "Copilot model is not present in the authenticated model catalog", http.StatusNotFound)
 }
 
-func selectEndpoint(model upstreamModel) (string, error) {
+func selectEndpoint(model upstreamModel, sourceFormat string) (string, error) {
 	if endpoint, ok := specialResponsesModel(model.ID); ok {
 		return endpoint, nil
 	}
 	endpoints := normalizeEndpoints(model.SupportedEndpoints)
-	for _, preferred := range []string{translate.EndpointResponses, translate.EndpointChatCompletions, translate.EndpointMessages} {
+	for _, preferred := range endpointPreference(sourceFormat) {
 		for _, endpoint := range endpoints {
 			if endpoint == preferred {
 				return preferred, nil
@@ -196,6 +196,16 @@ func selectEndpoint(model upstreamModel) (string, error) {
 		}
 	}
 	return "", statusError("unsupported_model_endpoint", "Copilot model exposes no supported chat endpoint", http.StatusUnprocessableEntity)
+}
+
+// endpointPreference keeps a Chat Completions client on the matching Copilot
+// endpoint when the model offers it, so the request and response bypass
+// translation entirely. Other client formats keep the original ordering.
+func endpointPreference(sourceFormat string) []string {
+	if sourceFormat == "openai" {
+		return []string{translate.EndpointChatCompletions, translate.EndpointResponses, translate.EndpointMessages}
+	}
+	return []string{translate.EndpointResponses, translate.EndpointChatCompletions, translate.EndpointMessages}
 }
 
 func specialResponsesModel(modelID string) (string, bool) {
