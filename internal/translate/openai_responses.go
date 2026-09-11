@@ -191,6 +191,28 @@ func claudeResponseToOpenAI(model string, body []byte) ([]byte, error) {
 	return json.Marshal(out)
 }
 
+// openAIChunk builds a bare Chat Completions stream chunk. The host wraps every
+// chunk in its own "data:" envelope and appends the [DONE] sentinel itself, so
+// frames must carry no SSE framing of their own.
+func openAIChunk(id, model string, created any, delta map[string]any, finishReason any, usage map[string]any) []byte {
+	payload := map[string]any{
+		"id":      id,
+		"object":  "chat.completion.chunk",
+		"created": created,
+		"model":   model,
+		"choices": []any{map[string]any{
+			"index":         0,
+			"delta":         delta,
+			"finish_reason": finishReason,
+		}},
+	}
+	if usage != nil {
+		payload["usage"] = usage
+	}
+	data, _ := json.Marshal(payload)
+	return data
+}
+
 // openAIPassthroughFrame unwraps an upstream Chat Completions SSE frame because
 // the host re-wraps every chunk in its own "data:" envelope.
 func openAIPassthroughFrame(frame []byte) ([][]byte, error) {

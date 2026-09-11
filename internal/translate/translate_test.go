@@ -540,3 +540,98 @@ func TestChatCompletionsPassthroughUnwrapsSSEEnvelope(t *testing.T) {
 		t.Fatalf("sentinel forwarded %d frames; the host appends its own", len(done))
 	}
 }
+
+func TestClaudeSSEToOpenAI(t *testing.T) {
+	t.Parallel()
+
+	// The official transformer drops any frame that does not begin with "data:",
+	// which is every frame of a real Claude SSE stream.
+	chunks := [][]byte{
+		[]byte(`event: message_start
+data: {"type":"message_start","message":{"id":"msg_1","model":"claude-test","usage":{"input_tokens":7}}}
+
+`),
+		[]byte(`event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":""}}
+
+`),
+		[]byte(`event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"weighing"}}
+
+`),
+		[]byte(`event: content_block_stop
+data: {"type":"content_block_stop","index":0}
+
+`),
+		[]byte(`event: content_block_start
+data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}
+
+`),
+		[]byte(`event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"one"}}
+
+`),
+		[]byte(`event: content_block_start
+data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"call_1","name":"lookup","input":{}}}
+
+`),
+		[]byte(`event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"q\":\"x\"}"}}
+
+`),
+		[]byte(`event: message_delta
+data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null},"usage":{"output_tokens":4}}
+
+`),
+		[]byte(`event: message_stop
+data: {"type":"message_stop"}
+
+`),
+	}
+	var state any
+	var frames [][]byte
+	for _, chunk := range chunks {
+		out, err := StreamFromEndpoint(context.Background(), EndpointMessages, "openai", "claude-test", nil, nil, chunk, &state)
+		if err != nil {
+			t.Fatalf("translate SSE: %v", err)
+		}
+		frames = append(frames, out...)
+	}
+	if len(frames) == 0 {
+		t.Fatal("no frames emitted")
+	}
+	for _, frame := range frames {
+		if got := gjson.GetBytes(frame, "object").String(); got != "chat.completion.chunk" {
+			t.Fatalf("frame object = %q: %s", got, frame)
+		}
+	}
+	if got := gjson.GetBytes(frames[0], "choices.0.delta.role").String(); got != "assistant" {
+		t.Fatalf("first frame does not open the assistant message: %s", frames[0])
+	}
+	if got := gjson.GetBytes(frames[0], "model").String(); got != "claude-test" {
+		t.Fatalf("model = %q: %s", got, frames[0])
+	}
+	text := string(bytes.Join(frames, []byte("\n")))
+	for _, needle := range []string{
+		`"reasoning_content":"weighing"`,
+		`"content":"one"`,
+		`"id":"call_1"`,
+		`"name":"lookup"`,
+		`"arguments":"{\"q\":\"x\"}"`,
+	} {
+		if !strings.Contains(text, needle) {
+			t.Fatalf("translated SSE omits %q:\n%s", needle, text)
+		}
+	}
+	last := frames[len(frames)-1]
+	if got := gjson.GetBytes(last, "choices.0.finish_reason").String(); got != "tool_calls" {
+		t.Fatalf("final finish_reason = %q: %s", got, last)
+	}
+	if got := gjson.GetBytes(last, "usage.total_tokens").Int(); got != 11 {
+		t.Fatalf("final total_tokens = %d: %s", got, last)
+	}
+	// message_stop must not emit a second terminal chunk.
+	if got := gjson.GetBytes(last, "usage.completion_tokens").Int(); got != 4 {
+		t.Fatalf("final completion_tokens = %d: %s", got, last)
+	}
+}

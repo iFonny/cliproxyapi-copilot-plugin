@@ -1,7 +1,6 @@
 package translate
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -211,20 +210,5 @@ func (s *responsesOpenAIStreamState) finish(response map[string]any) [][]byte {
 }
 
 func (s *responsesOpenAIStreamState) chunk(delta map[string]any, finishReason any, usage map[string]any) []byte {
-	payload := map[string]any{
-		"id":      s.ID,
-		"object":  "chat.completion.chunk",
-		"created": s.Created,
-		"model":   s.Model,
-		"choices": []any{map[string]any{
-			"index":         0,
-			"delta":         delta,
-			"finish_reason": finishReason,
-		}},
-	}
-	if usage != nil {
-		payload["usage"] = usage
-	}
-	data, _ := json.Marshal(payload)
-	return data
+	return openAIChunk(s.ID, s.Model, s.Created, delta, finishReason, usage)
 }

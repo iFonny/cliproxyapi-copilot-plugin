@@ -130,7 +130,7 @@ func response(ctx context.Context, from, to sdktranslator.Format, model string, 
 		return responsesResponseToOpenAI(model, body)
 	}
 	// The official Claude to Chat Completions transformer only reads SSE "data:"
-	// lines, so it silently returns an empty skeleton for a Claude message body.
+	// lines, so it returns an empty skeleton for a Claude message body.
 	if from == sdktranslator.FormatClaude && to == sdktranslator.FormatOpenAI {
 		return claudeResponseToOpenAI(model, body)
 	}
@@ -160,6 +160,9 @@ func stream(ctx context.Context, from, to sdktranslator.Format, model string, or
 	}
 	if from == sdktranslator.FormatOpenAIResponse && to == sdktranslator.FormatOpenAI {
 		return responsesStreamToOpenAI(model, frame, state)
+	}
+	if from == sdktranslator.FormatClaude && to == sdktranslator.FormatOpenAI {
+		return claudeStreamToOpenAI(model, frame, state)
 	}
 	if from != to && !registry.HasStreamResponseTransformer(to, from) {
 		intermediate, ok := intermediateFormat(to, from)
