@@ -3,7 +3,13 @@
 This guide adds the GitHub Copilot plugin to an existing official CLIProxyAPI
 deployment without replacing its configuration, API keys, or existing
 providers. The plugin currently targets CLIProxyAPI `v7.2.118`, ABI version 1,
-on Linux `amd64`.
+on Linux `amd64`. Later `v7.2.x` hosts keep ABI version 1 and accept
+registration schema 2, so the same library loads on them unchanged.
+
+There are two ways in. Installing from the plugin store needs nothing but a
+configuration edit and is described in
+[`plugin-store-install.md`](plugin-store-install.md). The rest of this guide is
+the manual path: build the library yourself and copy it into place.
 
 ## 1. Build the plugin
 

@@ -5,8 +5,13 @@ Licensed under the [MIT License](LICENSE).
 For an end-to-end deployment and Claude Code configuration walkthrough, see
 [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
 
-To add only the plugin to an existing CLIProxyAPI installation, see
+To add only the plugin to an existing CLIProxyAPI installation without building
+anything, see [`docs/plugin-store-install.md`](docs/plugin-store-install.md).
+The manual build-and-copy path is in
 [`docs/install-existing-deployment.md`](docs/install-existing-deployment.md).
+
+To confirm every client protocol returns a body, see
+[`docs/validate-client-formats.md`](docs/validate-client-formats.md).
 
 Initial, self-owned GitHub Copilot subscription provider for the official
 `router-for-me/CLIProxyAPI` v7.2.118 plugin ABI. The repository also defines a
@@ -158,6 +163,10 @@ The store then offers **GitHub Copilot subscription provider
 (OpenAI-compatible)**, resolves the latest release tag, verifies the archive
 against `checksums.txt`, and installs the library under the deployment's plugin
 directory. Upgrades are a single click once a newer tag is published.
+
+A fork starts with GitHub Actions disabled, which also disables the release
+workflow, so no release exists to install until it is enabled. The full sequence
+is in [`docs/plugin-store-install.md`](docs/plugin-store-install.md).
 
 ## Isolated deployment
 
