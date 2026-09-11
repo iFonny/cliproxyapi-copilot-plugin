@@ -91,6 +91,9 @@ make test
 make build
 ```
 
+`make test-docker` runs the same tests inside `golang:1.26-bookworm` and needs
+no local Go toolchain.
+
 The loader artifact is:
 
 ```text
