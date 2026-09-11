@@ -2,7 +2,7 @@
 set -eu
 
 VERSION=${1:-}
-PLUGIN_ID="cliproxyapi-copilot"
+PLUGIN_ID="cliproxyapi-copilot-openai"
 GOOS="linux"
 GOARCH="amd64"
 

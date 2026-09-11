@@ -94,7 +94,7 @@ make build
 The loader artifact is:
 
 ```text
-build/plugins/linux/amd64/cliproxyapi-copilot.so
+build/plugins/linux/amd64/cliproxyapi-copilot-openai.so
 ```
 
 `make build-local` exists for development, but a binary built on a newer host
@@ -103,8 +103,8 @@ glibc may not load in the Bookworm container.
 ## Existing CLIProxyAPI deployment
 
 The plugin can be installed without using this repository's Compose stack.
-Build `cliproxyapi-copilot.so`, place it under the deployment's configured
-plugin directory, merge the `cliproxyapi-copilot` entry into
+Build `cliproxyapi-copilot-openai.so`, place it under the deployment's
+configured plugin directory, merge the `cliproxyapi-copilot-openai` entry into
 `plugins.configs`, and restart CLIProxyAPI. Native and Docker instructions,
 including the complete configuration block, are in
 [`docs/install-existing-deployment.md`](docs/install-existing-deployment.md).
@@ -126,11 +126,11 @@ The release workflow builds with the tag version embedded in plugin metadata
 and publishes:
 
 ```text
-cliproxyapi-copilot_0.3.1_linux_amd64.zip
+cliproxyapi-copilot-openai_0.3.1_linux_amd64.zip
 checksums.txt
 ```
 
-The ZIP contains only `cliproxyapi-copilot.so` at its root, matching the
+The ZIP contains only `cliproxyapi-copilot-openai.so` at its root, matching the
 official CLIProxyAPI Plugins Store requirements.
 
 ## Isolated deployment

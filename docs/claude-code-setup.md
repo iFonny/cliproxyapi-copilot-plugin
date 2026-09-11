@@ -15,7 +15,7 @@ Claude Code
     v
 official CLIProxyAPI
     |-- built-in Claude OAuth ------> Anthropic subscription
-    `-- cliproxyapi-copilot plugin -> GitHub Copilot subscription
+    `-- cliproxyapi-copilot-openai plugin -> GitHub Copilot subscription
                                       (OpenAI Responses or Chat Completions)
 ```
 
@@ -375,8 +375,8 @@ curl -fsS \
   http://127.0.0.1:8317/v0/management/plugins
 ```
 
-The `cliproxyapi-copilot` plugin should be registered and enabled. Re-run Copilot
-device login if no Copilot auth file exists.
+The `cliproxyapi-copilot-openai` plugin should be registered and enabled. Re-run
+Copilot device login if no Copilot auth file exists.
 
 ### Claude Code does not show all models
 
