@@ -14,9 +14,9 @@ Claude Code
     | Anthropic Messages API
     v
 official CLIProxyAPI
-    |-- built-in Claude OAuth ------> Anthropic subscription
+    |-- built-in Claude OAuth -------------> Anthropic subscription
     `-- cliproxyapi-copilot-openai plugin -> GitHub Copilot subscription
-                                      (OpenAI Responses or Chat Completions)
+                                             (OpenAI Responses or Chat Completions)
 ```
 
 CCR is not required. The plugin translates Claude Messages requests to the
