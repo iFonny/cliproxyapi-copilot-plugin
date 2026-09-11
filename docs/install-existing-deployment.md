@@ -8,7 +8,7 @@ on Linux `amd64`.
 ## 1. Build the plugin
 
 ```bash
-git clone https://github.com/arthur-sommer-etc/cliproxyapi-copilot-plugin.git
+git clone https://github.com/iFonny/cliproxyapi-copilot-plugin.git
 cd cliproxyapi-copilot-plugin
 make build
 ```

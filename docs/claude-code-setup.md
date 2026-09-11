@@ -44,7 +44,7 @@ here at **Authenticate GitHub Copilot**.
 
 ```bash
 cd "$HOME"
-git clone https://github.com/arthur-sommer-etc/cliproxyapi-copilot-plugin.git
+git clone https://github.com/iFonny/cliproxyapi-copilot-plugin.git
 cd cliproxyapi-copilot-plugin
 ```
 

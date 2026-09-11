@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "plugins": [
+    {
+      "id": "cliproxyapi-copilot-openai",
+      "name": "GitHub Copilot subscription provider (OpenAI-compatible)",
+      "description": "Serves a GitHub Copilot subscription through CLIProxyAPI to OpenAI Chat Completions, OpenAI Responses and Anthropic Messages clients.",
+      "author": "iFonny",
+      "repository": "https://github.com/iFonny/cliproxyapi-copilot-plugin",
+      "homepage": "https://github.com/iFonny/cliproxyapi-copilot-plugin",
+      "license": "MIT",
+      "tags": ["copilot", "github", "openai", "claude"],
+      "install": {
+        "type": "github-release"
+      },
+      "auth_required": true
+    }
+  ]
+}
