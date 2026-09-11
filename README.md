@@ -1,5 +1,12 @@
 # CLIProxyAPI GitHub Copilot plugin
 
+This is a personal public fork of
+[`arthur-sommer-etc/cliproxyapi-copilot-plugin`](https://github.com/arthur-sommer-etc/cliproxyapi-copilot-plugin).
+It is not the upstream project. The plugin identifier is
+`cliproxyapi-copilot-openai` so it can sit beside the original. The change that
+justifies the fork is OpenAI Chat Completions support for clients such as
+GitKraken.
+
 Licensed under the [MIT License](LICENSE).
 
 For an end-to-end deployment and Claude Code configuration walkthrough, see
