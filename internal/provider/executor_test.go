@@ -42,3 +42,29 @@ func TestCountTokensReturnsClaudeInputTokens(t *testing.T) {
 		t.Fatalf("input_tokens = %d; response=%s", got, resp.Payload)
 	}
 }
+
+func TestNormalizeRequestFormat(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		value string
+		want  string
+	}{
+		{value: "", want: "openai-response"},
+		{value: "responses", want: "openai-response"},
+		{value: "openai-response", want: "openai-response"},
+		{value: "openai-responses", want: "openai-response"},
+		{value: "openai", want: "openai"},
+		{value: "OpenAI", want: "openai"},
+		{value: "openai-chat", want: "openai"},
+		{value: "chat-completions", want: "openai"},
+		{value: "claude", want: "claude"},
+		{value: "anthropic", want: "claude"},
+		{value: "gemini", want: ""},
+	}
+	for _, test := range tests {
+		if got := normalizeRequestFormat(test.value); got != test.want {
+			t.Errorf("normalizeRequestFormat(%q) = %q, want %q", test.value, got, test.want)
+		}
+	}
+}

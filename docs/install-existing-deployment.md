@@ -3,12 +3,18 @@
 This guide adds the GitHub Copilot plugin to an existing official CLIProxyAPI
 deployment without replacing its configuration, API keys, or existing
 providers. The plugin currently targets CLIProxyAPI `v7.2.118`, ABI version 1,
-on Linux `amd64`.
+on Linux `amd64`. Later `v7.2.x` hosts keep ABI version 1 and accept
+registration schema 2, so the same library loads on them unchanged.
+
+There are two ways in. Installing from the plugin store needs nothing but a
+configuration edit and is described in
+[`plugin-store-install.md`](plugin-store-install.md). The rest of this guide is
+the manual path: build the library yourself and copy it into place.
 
 ## 1. Build the plugin
 
 ```bash
-git clone https://github.com/arthur-sommer-etc/cliproxyapi-copilot-plugin.git
+git clone https://github.com/iFonny/cliproxyapi-copilot-plugin.git
 cd cliproxyapi-copilot-plugin
 make build
 ```
@@ -16,12 +22,16 @@ make build
 The resulting library is:
 
 ```text
-build/plugins/linux/amd64/cliproxyapi-copilot.so
+build/plugins/linux/amd64/cliproxyapi-copilot-openai.so
 ```
 
 The filename is significant: CLIProxyAPI derives the plugin ID
-`cliproxyapi-copilot` from it. Do not rename the library unless the matching key
-under `plugins.configs` is also renamed.
+`cliproxyapi-copilot-openai` from it. Do not rename the library unless the
+matching key under `plugins.configs` is also renamed.
+
+The auth provider key is `copilot` and is independent of the plugin ID, so a
+deployment migrating from a differently named build keeps its stored Copilot
+credential and does not need to log in to GitHub again.
 
 ## 2. Install the library
 
@@ -35,8 +45,8 @@ Choose a permanent plugin directory and copy the library:
 ```bash
 sudo install -d -m 0755 /opt/cliproxyapi/plugins/linux/amd64
 sudo install -m 0755 \
-  build/plugins/linux/amd64/cliproxyapi-copilot.so \
-  /opt/cliproxyapi/plugins/linux/amd64/cliproxyapi-copilot.so
+  build/plugins/linux/amd64/cliproxyapi-copilot-openai.so \
+  /opt/cliproxyapi/plugins/linux/amd64/cliproxyapi-copilot-openai.so
 ```
 
 The CLIProxyAPI process must be able to read the library. Use a different
@@ -49,8 +59,8 @@ Copy the library into a persistent host directory:
 ```bash
 install -d -m 0755 /path/to/cliproxyapi/plugins/linux/amd64
 install -m 0755 \
-  build/plugins/linux/amd64/cliproxyapi-copilot.so \
-  /path/to/cliproxyapi/plugins/linux/amd64/cliproxyapi-copilot.so
+  build/plugins/linux/amd64/cliproxyapi-copilot-openai.so \
+  /path/to/cliproxyapi/plugins/linux/amd64/cliproxyapi-copilot-openai.so
 ```
 
 Mount that directory into the existing container:
@@ -74,7 +84,7 @@ plugins:
   enabled: true
   dir: "/opt/cliproxyapi/plugins" # Native deployment
   configs:
-    cliproxyapi-copilot:
+    cliproxyapi-copilot-openai:
       enabled: true
       priority: 100
       github_client_id: "Iv1.b507a08c87ecfe98"
@@ -98,7 +108,7 @@ plugins:
 
 There must be only one top-level `plugins` key. Preserve other entries already
 present under `plugins.configs`. Global `plugins.enabled` and the individual
-`cliproxyapi-copilot.enabled` setting must both be `true`.
+`cliproxyapi-copilot-openai.enabled` setting must both be `true`.
 
 The existing `auth-dir` must be writable and persistent. The plugin stores its
 GitHub OAuth credential through CLIProxyAPI's normal auth storage; it does not
@@ -110,7 +120,7 @@ prevent duplicate Claude model IDs from being scheduled through Copilot:
 ```yaml
 plugins:
   configs:
-    cliproxyapi-copilot:
+    cliproxyapi-copilot-openai:
       excluded_model_prefixes:
         - "claude-"
 ```
@@ -130,8 +140,8 @@ docker compose up -d --force-recreate cliproxyapi
 The startup log should contain entries similar to:
 
 ```text
-plugin loaded plugin_id=cliproxyapi-copilot
-plugin registered plugin_id=cliproxyapi-copilot
+plugin loaded plugin_id=cliproxyapi-copilot-openai
+plugin registered plugin_id=cliproxyapi-copilot-openai
 ```
 
 Open the existing CLIProxyAPI management center, start the **Copilot** login,
@@ -164,7 +174,7 @@ The result should include Copilot models such as `gpt-5.6-sol` and
 
 Version tags automatically publish marketplace-compatible packages. To update
 from a release, verify the archive against `checksums.txt`, extract
-`cliproxyapi-copilot.so`, replace the installed library, and restart
+`cliproxyapi-copilot-openai.so`, replace the installed library, and restart
 CLIProxyAPI.
 
 To disable it without deleting credentials:
@@ -172,11 +182,11 @@ To disable it without deleting credentials:
 ```yaml
 plugins:
   configs:
-    cliproxyapi-copilot:
+    cliproxyapi-copilot-openai:
       enabled: false
 ```
 
 To remove it completely, stop CLIProxyAPI, delete the installed library, remove
-only the `cliproxyapi-copilot` configuration entry, and restart. Delete the
-plugin's Copilot auth entry through the normal management UI only if the stored
-credential should also be revoked or removed.
+only the `cliproxyapi-copilot-openai` configuration entry, and restart. Delete
+the plugin's Copilot auth entry through the normal management UI only if the
+stored credential should also be revoked or removed.

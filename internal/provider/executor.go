@@ -42,7 +42,7 @@ func (s *Service) Execute(ctx context.Context, req ExecuteRequest) (pluginapi.Ex
 	if errParse != nil {
 		return pluginapi.ExecutorResponse{}, errParse
 	}
-	endpoint, token, errEndpoint := s.endpointForModel(ctx, req.HostCallbackID, req.AuthID, storage, req.Model)
+	endpoint, token, errEndpoint := s.endpointForModel(ctx, req.HostCallbackID, req.AuthID, storage, req.Model, sourceFormat)
 	if errEndpoint != nil {
 		return pluginapi.ExecutorResponse{}, errEndpoint
 	}
@@ -80,7 +80,7 @@ func (s *Service) ExecuteStream(ctx context.Context, req ExecuteRequest) (http.H
 	if errParse != nil {
 		return nil, errParse
 	}
-	endpoint, token, errEndpoint := s.endpointForModel(ctx, req.HostCallbackID, req.AuthID, storage, req.Model)
+	endpoint, token, errEndpoint := s.endpointForModel(ctx, req.HostCallbackID, req.AuthID, storage, req.Model, sourceFormat)
 	if errEndpoint != nil {
 		return nil, errEndpoint
 	}
@@ -245,6 +245,8 @@ func normalizeRequestFormat(value string) string {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "", "responses", "openai-response", "openai-responses":
 		return "openai-response"
+	case "openai", "openai-chat", "chat-completions":
+		return "openai"
 	case "claude", "anthropic":
 		return "claude"
 	default:

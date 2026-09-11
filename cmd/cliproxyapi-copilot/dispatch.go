@@ -12,7 +12,7 @@ import (
 )
 
 var pluginService = provider.New(hostTransport{})
-var pluginVersion = "0.3.3"
+var pluginVersion = "0.4.0"
 
 type lifecycleRequest struct {
 	ConfigYAML []byte `json:"config_yaml"`
@@ -165,7 +165,7 @@ func pluginRegistration() registration {
 			Name:             "GitHub Copilot subscription provider",
 			Version:          pluginVersion,
 			Author:           "self-owned",
-			GitHubRepository: "https://github.com/arthur-sommer-etc/cliproxyapi-copilot-plugin",
+			GitHubRepository: "https://github.com/iFonny/cliproxyapi-copilot-plugin",
 			ConfigFields: []pluginapi.ConfigField{
 				{Name: "github_client_id", Type: pluginapi.ConfigFieldTypeString, Description: "Public GitHub OAuth application client identifier used for device flow."},
 				{Name: "github_scope", Type: pluginapi.ConfigFieldTypeString, Description: "Space-delimited GitHub OAuth scopes; defaults to the least-privilege read:user scope."},
@@ -183,8 +183,8 @@ func pluginRegistration() registration {
 			AuthProvider:          true,
 			Executor:              true,
 			ExecutorModelScope:    pluginapi.ExecutorModelScopeOAuth,
-			ExecutorInputFormats:  []string{"openai-response", "claude"},
-			ExecutorOutputFormats: []string{"openai-response", "claude"},
+			ExecutorInputFormats:  []string{"openai", "openai-response", "claude"},
+			ExecutorOutputFormats: []string{"openai", "openai-response", "claude"},
 		},
 	}
 }

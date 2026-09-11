@@ -78,6 +78,9 @@ func StreamFromEndpoint(ctx context.Context, endpoint, destination, model string
 	}
 	to := sdktranslator.FromString(destination)
 	if from == to {
+		if to == sdktranslator.FormatOpenAI {
+			return openAIPassthroughFrame(frame)
+		}
 		return [][]byte{append([]byte(nil), frame...)}, nil
 	}
 	return stream(ctx, from, to, model, original, translated, frame, state)
@@ -93,6 +96,9 @@ func request(from, to sdktranslator.Format, model string, body []byte, stream bo
 	}
 	if from == sdktranslator.FormatClaude && to == sdktranslator.FormatOpenAIResponse {
 		return claudeRequestToResponses(model, body, stream)
+	}
+	if from == sdktranslator.FormatOpenAI && to == sdktranslator.FormatOpenAIResponse {
+		return openAIRequestToResponses(model, body, stream)
 	}
 	if from != to && !registry.HasRequestTransformer(from, to) {
 		intermediate, ok := intermediateFormat(from, to)
@@ -120,6 +126,14 @@ func response(ctx context.Context, from, to sdktranslator.Format, model string, 
 	if from == sdktranslator.FormatOpenAIResponse && to == sdktranslator.FormatClaude {
 		return responsesResponseToClaude(model, body)
 	}
+	if from == sdktranslator.FormatOpenAIResponse && to == sdktranslator.FormatOpenAI {
+		return responsesResponseToOpenAI(model, body)
+	}
+	// The official Claude to Chat Completions transformer only reads SSE "data:"
+	// lines, so it returns an empty skeleton for a Claude message body.
+	if from == sdktranslator.FormatClaude && to == sdktranslator.FormatOpenAI {
+		return claudeResponseToOpenAI(model, body)
+	}
 	if from != to && !registry.HasNonStreamResponseTransformer(to, from) {
 		intermediate, ok := intermediateFormat(to, from)
 		if !ok {
@@ -143,6 +157,12 @@ func response(ctx context.Context, from, to sdktranslator.Format, model string, 
 func stream(ctx context.Context, from, to sdktranslator.Format, model string, original, translated, frame []byte, state *any) ([][]byte, error) {
 	if from == sdktranslator.FormatOpenAIResponse && to == sdktranslator.FormatClaude {
 		return responsesStreamToClaude(model, frame, state)
+	}
+	if from == sdktranslator.FormatOpenAIResponse && to == sdktranslator.FormatOpenAI {
+		return responsesStreamToOpenAI(model, frame, state)
+	}
+	if from == sdktranslator.FormatClaude && to == sdktranslator.FormatOpenAI {
+		return claudeStreamToOpenAI(model, frame, state)
 	}
 	if from != to && !registry.HasStreamResponseTransformer(to, from) {
 		intermediate, ok := intermediateFormat(to, from)

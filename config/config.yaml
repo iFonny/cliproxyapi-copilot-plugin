@@ -33,7 +33,7 @@ plugins:
   enabled: true
   dir: "plugins"
   configs:
-    cliproxyapi-copilot:
+    cliproxyapi-copilot-openai:
       enabled: true
       priority: 100
       github_client_id: "Iv1.b507a08c87ecfe98"

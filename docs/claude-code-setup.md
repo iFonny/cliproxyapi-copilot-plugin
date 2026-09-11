@@ -14,9 +14,9 @@ Claude Code
     | Anthropic Messages API
     v
 official CLIProxyAPI
-    |-- built-in Claude OAuth ------> Anthropic subscription
-    `-- cliproxyapi-copilot plugin -> GitHub Copilot subscription
-                                      (OpenAI Responses or Chat Completions)
+    |-- built-in Claude OAuth -------------> Anthropic subscription
+    `-- cliproxyapi-copilot-openai plugin -> GitHub Copilot subscription
+                                             (OpenAI Responses or Chat Completions)
 ```
 
 CCR is not required. The plugin translates Claude Messages requests to the
@@ -44,7 +44,7 @@ here at **Authenticate GitHub Copilot**.
 
 ```bash
 cd "$HOME"
-git clone https://github.com/arthur-sommer-etc/cliproxyapi-copilot-plugin.git
+git clone https://github.com/iFonny/cliproxyapi-copilot-plugin.git
 cd cliproxyapi-copilot-plugin
 ```
 
@@ -375,8 +375,8 @@ curl -fsS \
   http://127.0.0.1:8317/v0/management/plugins
 ```
 
-The `cliproxyapi-copilot` plugin should be registered and enabled. Re-run Copilot
-device login if no Copilot auth file exists.
+The `cliproxyapi-copilot-openai` plugin should be registered and enabled. Re-run
+Copilot device login if no Copilot auth file exists.
 
 ### Claude Code does not show all models
 

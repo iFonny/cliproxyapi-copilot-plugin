@@ -5,8 +5,13 @@ Licensed under the [MIT License](LICENSE).
 For an end-to-end deployment and Claude Code configuration walkthrough, see
 [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
 
-To add only the plugin to an existing CLIProxyAPI installation, see
+To add only the plugin to an existing CLIProxyAPI installation without building
+anything, see [`docs/plugin-store-install.md`](docs/plugin-store-install.md).
+The manual build-and-copy path is in
 [`docs/install-existing-deployment.md`](docs/install-existing-deployment.md).
+
+To confirm every client protocol returns a body, see
+[`docs/validate-client-formats.md`](docs/validate-client-formats.md).
 
 Initial, self-owned GitHub Copilot subscription provider for the official
 `router-for-me/CLIProxyAPI` v7.2.118 plugin ABI. The repository also defines a
@@ -43,14 +48,19 @@ The provider packages are intentionally separated:
 - `internal/provider`: OAuth, storage, Copilot token exchange/cache, models,
   endpoint selection, and execution
 - `internal/translate`: official translator SDK integration plus the missing
-  Claude Messages ↔ OpenAI Responses bridge
+  Claude Messages ↔ OpenAI Responses and Chat Completions ↔ OpenAI Responses
+  bridges
 - `internal/transport`: host HTTP/stream callback abstraction
 - `internal/sse`: chunk-safe SSE framing
 - `internal/redact`: bounded, token-redacting error text
 
-Claude input is accepted directly. Chat- or Messages-only Copilot models use
-official built-in translators. Responses-only models use the custom Claude
-bridge; `gpt-5.6-sol` and `gpt-5.6-terra` are always routed to `/responses`.
+OpenAI Chat Completions, OpenAI Responses and Claude Messages clients are all
+accepted. A Chat Completions client is kept on Copilot's `/chat/completions`
+endpoint when the model exposes it, so nothing is translated; other client
+formats keep preferring `/responses`. Chat- or Messages-only Copilot models use
+official built-in translators where a route exists, and the custom bridges
+otherwise. `gpt-5.6-sol` and `gpt-5.6-terra` are always routed to `/responses`,
+so every client format reaches them through a bridge.
 Claude token-count requests are estimated locally with the same O200k tokenizer
 approach used by CLIProxyAPI for translated Claude requests.
 Copilot model prefixes can be excluded from discovery to avoid collisions with
@@ -91,10 +101,13 @@ make test
 make build
 ```
 
+`make test-docker` runs the same tests inside `golang:1.26-bookworm` and needs
+no local Go toolchain.
+
 The loader artifact is:
 
 ```text
-build/plugins/linux/amd64/cliproxyapi-copilot.so
+build/plugins/linux/amd64/cliproxyapi-copilot-openai.so
 ```
 
 `make build-local` exists for development, but a binary built on a newer host
@@ -103,8 +116,8 @@ glibc may not load in the Bookworm container.
 ## Existing CLIProxyAPI deployment
 
 The plugin can be installed without using this repository's Compose stack.
-Build `cliproxyapi-copilot.so`, place it under the deployment's configured
-plugin directory, merge the `cliproxyapi-copilot` entry into
+Build `cliproxyapi-copilot-openai.so`, place it under the deployment's
+configured plugin directory, merge the `cliproxyapi-copilot-openai` entry into
 `plugins.configs`, and restart CLIProxyAPI. Native and Docker instructions,
 including the complete configuration block, are in
 [`docs/install-existing-deployment.md`](docs/install-existing-deployment.md).
@@ -118,20 +131,42 @@ To publish a marketplace-compatible release, create and push a dotted numeric
 version tag:
 
 ```sh
-git tag v0.3.1
-git push origin v0.3.1
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
 The release workflow builds with the tag version embedded in plugin metadata
 and publishes:
 
 ```text
-cliproxyapi-copilot_0.3.1_linux_amd64.zip
+cliproxyapi-copilot-openai_0.4.0_linux_amd64.zip
 checksums.txt
 ```
 
-The ZIP contains only `cliproxyapi-copilot.so` at its root, matching the
+The ZIP contains only `cliproxyapi-copilot-openai.so` at its root, matching the
 official CLIProxyAPI Plugins Store requirements.
+
+## Plugin store registry
+
+[`registry.json`](registry.json) makes this repository installable from
+CLIProxyAPI's Plugins Store without building anything. Add it as an extra
+registry alongside the official one:
+
+```yaml
+plugins:
+  enabled: true
+  registries:
+    - "https://raw.githubusercontent.com/iFonny/cliproxyapi-copilot-plugin/main/registry.json"
+```
+
+The store then offers **GitHub Copilot subscription provider
+(OpenAI-compatible)**, resolves the latest release tag, verifies the archive
+against `checksums.txt`, and installs the library under the deployment's plugin
+directory. Upgrades are a single click once a newer tag is published.
+
+A fork starts with GitHub Actions disabled, which also disables the release
+workflow, so no release exists to install until it is enabled. The full sequence
+is in [`docs/plugin-store-install.md`](docs/plugin-store-install.md).
 
 ## Isolated deployment
 

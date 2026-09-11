@@ -10,35 +10,65 @@ func TestSelectEndpoint(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		model     upstreamModel
-		want      string
-		wantError bool
+		name         string
+		model        upstreamModel
+		sourceFormat string
+		want         string
+		wantError    bool
 	}{
 		{
-			name:  "responses preferred",
-			model: upstreamModel{ID: "model-a", SupportedEndpoints: []string{"/chat/completions", "/responses"}},
-			want:  translate.EndpointResponses,
+			name:         "responses preferred",
+			model:        upstreamModel{ID: "model-a", SupportedEndpoints: []string{"/chat/completions", "/responses"}},
+			sourceFormat: "openai-response",
+			want:         translate.EndpointResponses,
 		},
 		{
-			name:  "messages fallback",
-			model: upstreamModel{ID: "model-b", SupportedEndpoints: []string{"messages"}},
-			want:  translate.EndpointMessages,
+			name:         "messages fallback",
+			model:        upstreamModel{ID: "model-b", SupportedEndpoints: []string{"messages"}},
+			sourceFormat: "openai-response",
+			want:         translate.EndpointMessages,
 		},
 		{
-			name:  "sol forced to responses",
-			model: upstreamModel{ID: "gpt-5.6-sol", SupportedEndpoints: []string{"/chat/completions"}},
-			want:  translate.EndpointResponses,
+			name:         "chat client prefers chat completions",
+			model:        upstreamModel{ID: "model-a", SupportedEndpoints: []string{"/chat/completions", "/responses"}},
+			sourceFormat: "openai",
+			want:         translate.EndpointChatCompletions,
 		},
 		{
-			name:  "terra forced to responses",
-			model: upstreamModel{ID: "GPT-5.6-TERRA"},
-			want:  translate.EndpointResponses,
+			name:         "chat client falls back to responses",
+			model:        upstreamModel{ID: "model-c", SupportedEndpoints: []string{"/responses"}},
+			sourceFormat: "openai",
+			want:         translate.EndpointResponses,
 		},
 		{
-			name:      "unsupported",
-			model:     upstreamModel{ID: "embedding-model", SupportedEndpoints: []string{"/embeddings"}},
-			wantError: true,
+			name:         "claude client keeps responses preference",
+			model:        upstreamModel{ID: "model-a", SupportedEndpoints: []string{"/chat/completions", "/responses"}},
+			sourceFormat: "claude",
+			want:         translate.EndpointResponses,
+		},
+		{
+			name:         "sol forced to responses",
+			model:        upstreamModel{ID: "gpt-5.6-sol", SupportedEndpoints: []string{"/chat/completions"}},
+			sourceFormat: "openai-response",
+			want:         translate.EndpointResponses,
+		},
+		{
+			name:         "sol forced to responses for chat client",
+			model:        upstreamModel{ID: "gpt-5.6-sol", SupportedEndpoints: []string{"/chat/completions"}},
+			sourceFormat: "openai",
+			want:         translate.EndpointResponses,
+		},
+		{
+			name:         "terra forced to responses",
+			model:        upstreamModel{ID: "GPT-5.6-TERRA"},
+			sourceFormat: "openai-response",
+			want:         translate.EndpointResponses,
+		},
+		{
+			name:         "unsupported",
+			model:        upstreamModel{ID: "embedding-model", SupportedEndpoints: []string{"/embeddings"}},
+			sourceFormat: "openai",
+			wantError:    true,
 		},
 	}
 
@@ -46,7 +76,7 @@ func TestSelectEndpoint(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := selectEndpoint(test.model)
+			got, err := selectEndpoint(test.model, test.sourceFormat)
 			if test.wantError {
 				if err == nil {
 					t.Fatal("expected an endpoint selection error")
