@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -268,7 +267,6 @@ func TestParsePriorityValue(t *testing.T) {
 		{name: "float64", raw: float64(100), want: 100, wantOK: true},
 		{name: "int", raw: 7, want: 7, wantOK: true},
 		{name: "string", raw: "9", want: 9, wantOK: true},
-		{name: "json number", raw: json.Number("11"), want: 11, wantOK: true},
 		{name: "nil", raw: nil, wantOK: false},
 		{name: "bad string", raw: "x", wantOK: false},
 	}

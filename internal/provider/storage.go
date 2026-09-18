@@ -88,82 +88,54 @@ func authData(storage authStorage, id, fileName, prefix, proxyURL string, disabl
 	}, nil
 }
 
-// ensureAuthPriority keeps Attributes["priority"] (string) and Metadata["priority"]
-// aligned the way native CLIProxyAPI auth files do. The scheduler and management
-// UI both read Attributes["priority"].
+// ensureAuthPriority keeps Attributes["priority"] (string) and Metadata["priority"] (int)
+// aligned with host conventions.
 func ensureAuthPriority(metadata map[string]any, attributes map[string]string) {
-	if attributes == nil {
-		return
-	}
-	if raw := strings.TrimSpace(attributes["priority"]); raw != "" {
-		if priority, errAtoi := strconv.Atoi(raw); errAtoi == nil {
-			attributes["priority"] = strconv.Itoa(priority)
-			if metadata != nil {
-				if _, ok := metadata["priority"]; !ok {
-					metadata["priority"] = priority
+	if attributes != nil {
+		if raw := strings.TrimSpace(attributes["priority"]); raw != "" {
+			if priority, err := strconv.Atoi(raw); err == nil {
+				attributes["priority"] = strconv.Itoa(priority)
+				if metadata != nil {
+					if _, ok := metadata["priority"]; !ok {
+						metadata["priority"] = priority
+					}
 				}
+				return
 			}
-			return
 		}
 	}
-	if metadata == nil {
+	if metadata == nil || attributes == nil {
 		return
 	}
-	rawPriority, ok := metadata["priority"]
-	if !ok {
-		return
+	if priority, ok := parsePriorityValue(metadata["priority"]); ok {
+		attributes["priority"] = strconv.Itoa(priority)
+		metadata["priority"] = priority
 	}
-	priority, ok := parsePriorityValue(rawPriority)
-	if !ok {
-		return
-	}
-	attributes["priority"] = strconv.Itoa(priority)
-	metadata["priority"] = priority
 }
 
 func extractPriorityFromJSON(raw []byte) (int, bool) {
 	var envelope struct {
 		Priority any `json:"priority"`
 	}
-	if errUnmarshal := json.Unmarshal(raw, &envelope); errUnmarshal != nil {
+	if err := json.Unmarshal(raw, &envelope); err != nil {
 		return 0, false
 	}
 	return parsePriorityValue(envelope.Priority)
 }
 
 func parsePriorityValue(raw any) (int, bool) {
-	switch value := raw.(type) {
-	case nil:
-		return 0, false
+	switch v := raw.(type) {
 	case float64:
-		return int(value), true
-	case float32:
-		return int(value), true
+		return int(v), true
 	case int:
-		return value, true
-	case int32:
-		return int(value), true
-	case int64:
-		return int(value), true
-	case json.Number:
-		parsed, errAtoi := strconv.Atoi(string(value))
-		if errAtoi != nil {
-			return 0, false
-		}
-		return parsed, true
+		return v, true
 	case string:
-		priority := strings.TrimSpace(value)
-		if priority == "" {
-			return 0, false
+		p := strings.TrimSpace(v)
+		if n, err := strconv.Atoi(p); err == nil {
+			return n, true
 		}
-		parsed, errAtoi := strconv.Atoi(priority)
-		if errAtoi != nil {
-			return 0, false
-		}
-		return parsed, true
-	default:
-		return 0, false
 	}
+	return 0, false
 }
 
 func nextGitHubRefresh(storage authStorage, now time.Time) time.Time {
