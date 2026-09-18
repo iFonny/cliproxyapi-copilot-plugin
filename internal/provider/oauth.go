@@ -77,7 +77,17 @@ func (s *Service) ParseAuth(req pluginapi.AuthParseRequest) (pluginapi.AuthParse
 		}
 		return pluginapi.AuthParseResponse{}, errParse
 	}
-	data, errData := authData(storage, req.FileName, req.FileName, "", "", false, nil, nil)
+	var metadata map[string]any
+	attributes := map[string]string{"auth_kind": "oauth"}
+	if priority, ok := extractPriorityFromJSON(req.RawJSON); ok {
+		metadata = map[string]any{
+			"type":         providerID,
+			"github_login": storage.GitHubLogin,
+			"priority":     priority,
+		}
+		attributes["priority"] = strconv.Itoa(priority)
+	}
+	data, errData := authData(storage, req.FileName, req.FileName, "", "", false, metadata, attributes)
 	if errData != nil {
 		return pluginapi.AuthParseResponse{}, errData
 	}
