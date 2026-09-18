@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -70,6 +71,7 @@ func authData(storage authStorage, id, fileName, prefix, proxyURL string, disabl
 	if len(attributes) == 0 {
 		attributes = map[string]string{"auth_kind": "oauth"}
 	}
+	ensureAuthPriority(metadata, attributes)
 	nextRefresh := nextGitHubRefresh(storage, time.Now())
 	return pluginapi.AuthData{
 		Provider:         providerID,
@@ -84,6 +86,56 @@ func authData(storage authStorage, id, fileName, prefix, proxyURL string, disabl
 		Attributes:       attributes,
 		NextRefreshAfter: nextRefresh,
 	}, nil
+}
+
+// ensureAuthPriority keeps Attributes["priority"] (string) and Metadata["priority"] (int)
+// aligned with host conventions.
+func ensureAuthPriority(metadata map[string]any, attributes map[string]string) {
+	if attributes != nil {
+		if raw := strings.TrimSpace(attributes["priority"]); raw != "" {
+			if priority, err := strconv.Atoi(raw); err == nil {
+				attributes["priority"] = strconv.Itoa(priority)
+				if metadata != nil {
+					if _, ok := metadata["priority"]; !ok {
+						metadata["priority"] = priority
+					}
+				}
+				return
+			}
+		}
+	}
+	if metadata == nil || attributes == nil {
+		return
+	}
+	if priority, ok := parsePriorityValue(metadata["priority"]); ok {
+		attributes["priority"] = strconv.Itoa(priority)
+		metadata["priority"] = priority
+	}
+}
+
+func extractPriorityFromJSON(raw []byte) (int, bool) {
+	var envelope struct {
+		Priority any `json:"priority"`
+	}
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		return 0, false
+	}
+	return parsePriorityValue(envelope.Priority)
+}
+
+func parsePriorityValue(raw any) (int, bool) {
+	switch v := raw.(type) {
+	case float64:
+		return int(v), true
+	case int:
+		return v, true
+	case string:
+		p := strings.TrimSpace(v)
+		if n, err := strconv.Atoi(p); err == nil {
+			return n, true
+		}
+	}
+	return 0, false
 }
 
 func nextGitHubRefresh(storage authStorage, now time.Time) time.Time {
